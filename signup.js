@@ -1,26 +1,21 @@
 async function signup(event){
-  event.preventDefault();//prevent page redirect
+  event.preventDefault();
 
-  let form = event.target;
-  let fields = event.target.elements;
-  
+  let form = event.target.elements;
+
   let data = {
-    username: fields['username'].value,
-    email: fields['email'].value,
-    password: fields['password'].value,
-  }
+    username: form['username'].value,
+    email: form['email'].value,
+    password: form['password'].value
+  };
 
-  //reset form
-  form.reset();
+  let result = await sendRequest('/signup', 'POST', data);
 
-  //send data to application server
-  let result = await sendRequest(`${server}/signup`, 'POST', data);
-  
-  if('error' in result){
-    toast("Loggin Failed: "+result['error']);//show error message
-  }else{
-    toast("Logged Successful");
-    window.location.href= 'index.html';//redirect the page
+  if ('detail' in result){
+    toast("Register Failed");
+  } else {
+    toast("Register Successful");
+    window.location.href = "index.html";
   }
 }
 
