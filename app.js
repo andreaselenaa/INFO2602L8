@@ -1,99 +1,79 @@
-const tabs = M.Tabs.init(document.querySelector('.tabs'));
+document.addEventListener('DOMContentLoaded', function () {
+  M.Tabs.init(document.querySelectorAll('.tabs'));
+});
 
-//function must be declared async to support the await keyword
-async function displayTodos(data) {
+async function displayTodos(data){
 
-  let result = document.querySelector('#result');//access the DOM
+  let result = document.querySelector('#result');
+  result.innerHTML = '';
 
-  result.innerHTML = '';//clear result area
+  let html = '';
 
-  let html = '';//make an empty html string 
-
-  if ("error" in data) {//user not logged in 
-    html += `
-      <li class="card collection-item col s12 m4">
-                <div class="card-content">
-                  <span class="card-title">
-                    Error : Not Logged In
-                  </span>
-                </div>
-        </li>
-    `;
+  if ("error" in data){
+    html += `<li>Error: Not Logged In</li>`;
   } else {
-    for (let todo of data) {
+    for (let todo of data){
       html += `
-        <li class="card collection-item col s12 m4">
-                  <div class="card-content">
-                    <span class="card-title">${todo.text}
-                      <label class="right">
-                        <input type="checkbox" data-id="${todo.id}" onclick="toggleDone(event)" ${todo.done ? 'checked' : ''} />
-                        <span>Done</span>
-                      </label>
-                    </span>
-                  </div>
-                  <div class="card-action">
-                    <a href="#" onclick="deleteTodo('${todo.id}')">DELETE</a>
-                  </div>
-          </li>
-      `;//create html for each todo data by interpolating the values in the todo
+        <li>
+          ${todo.text}
+          <input type="checkbox"
+            data-id="${todo.id}"
+            onclick="toggleDone(event)"
+            ${todo.done ? 'checked' : ''}>
+          <a onclick="deleteTodo('${todo.id}')">DELETE</a>
+        </li>
+      `;
     }
   }
 
-  //add the dynamic html to the DOM
   result.innerHTML = html;
 }
 
-async function loadView() {
-  let todos = await sendRequest(`${server}/todos`, 'GET');
+async function loadView(){
+  let todos = await sendRequest('/todos', 'GET');
   displayTodos(todos);
 }
 
 loadView();
 
-async function createTodo(event) {
-  event.preventDefault();//stop the form from reloading the page
-  let form = event.target.elements;//get the form from the event object
+async function createTodo(event){
+  event.preventDefault();
+
+  let form = event.target.elements;
 
   let data = {
-    text: form['addText'].value,//get data from form
-    done: false,// newly created todos aren't done by default
-  }
+    text: form['addText'].value,
+    done: false
+  };
 
-  event.target.reset();//reset form
+  event.target.reset();
 
-  let result = await sendRequest(`${server}/todos`, 'POST', data);
+  let result = await sendRequest('/todo', 'POST', data);
 
-  if ('error' in result) {
-    toast('Error: Not Logged In');
-  } else {
-    toast('Todo Created!');
-  }
-
+  toast('Todo Created!');
   loadView();
-
 }
 
-//attach createTodo() to the submit event of the form
 document.forms['addForm'].addEventListener('submit', createTodo);
 
-async function toggleDone(event) {
+async function toggleDone(event){
   let checkbox = event.target;
-  let id = checkbox.dataset['id'];//get id from data attribute
+  let id = checkbox.dataset['id'];
+  let done = checkbox.checked;
 
-  let result = await sendRequest(`${server}/todos/${id}/done`, 'PUT');
+  await sendRequest(`/todo/${id}`, 'PUT', { done });
 
-  toast(result.message);
+  toast(done ? "Done!" : "Not Done!");
 }
 
-async function deleteTodo(id) {
-  let result = await sendRequest(`${server}/todos/${id}`, 'DELETE');
+async function deleteTodo(id){
+  await sendRequest(`/todo/${id}`, 'DELETE');
 
-  toast('Deleted!');
-
+  toast("Deleted!");
   loadView();
 }
 
-function logout() {
-  window.localStorage.removeItem('access_token');
+function logout(){
+  localStorage.removeItem('access_token');
   window.location.href = "index.html";
 }
